@@ -1,30 +1,76 @@
-import 'package:flutter/material.dart';
+// ignore_for_file: unnecessary_this
 
-class MovieSlider extends StatelessWidget {
-  // const MovieSlider({Key? key}) : super(key: key);
+import 'package:flutter/material.dart';
+import 'package:movies_app/models/models.dart';
+
+class MovieSlider extends StatefulWidget {
+  
+  final List<Movie> movies;
+  final Function loadNextPage;
+  
+  const MovieSlider({
+    Key? key, 
+    required this.movies,
+    required this.loadNextPage
+  }) : super(key: key);
+
+  @override
+  State<MovieSlider> createState() => _MovieSliderState();
+}
+
+class _MovieSliderState extends State<MovieSlider> {
+
+  final ScrollController scrollController = ScrollController();
+  
+  @override
+  void initState(){
+
+    super.initState();
+    /**
+     * Evento Listener al controller del scroll apra cargar más datos
+     * cuando llegue al final del scroll
+     */
+    scrollController.addListener(() {
+      //Capturamos posción actual y el máximo de pixels del scroll
+      var pixelsPosition = scrollController.position.pixels;
+      var maxScroll = scrollController.position.maxScrollExtent;
+
+      //Cauando la posición actual se acerque al final, cargamos más datos
+      if (pixelsPosition >= maxScroll - 150) widget.loadNextPage();
+    });
+  }
+
+  @override
+  void dispose() => super.dispose();
+  
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 260,
       // color: Colors.red,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Populars',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Populars',
+              style: TextStyle(
+                fontSize: 20, 
+                fontWeight: FontWeight.bold)
+              ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 5,
           ),
           Expanded(
             child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: 20,
-                itemBuilder: (_, int index) => _MoviePoster()),
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              itemCount: widget.movies.length,
+              itemBuilder: (_, int i) => _MoviePoster(movie: widget.movies[i])),
           )
         ],
       ),
@@ -33,25 +79,28 @@ class MovieSlider extends StatelessWidget {
 }
 
 class _MoviePoster extends StatelessWidget {
-  const _MoviePoster({Key? key}) : super(key: key);
+
+  //Instancia del modelo Movie
+  final Movie movie; 
+  
+  const _MoviePoster({Key? key, required this.movie}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 130,
       height: 190,
-      // color: Colors.green,
       margin: const EdgeInsets.symmetric(horizontal: 10),
       child: Column(
         children: [
           GestureDetector(
             onTap: () => Navigator.pushNamed(context, 'details',
-                arguments: 'detalls peli'),
+                arguments: movie),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: FadeInImage(
-                placeholder: AssetImage('assets/no-image.jpg'),
-                image: NetworkImage('https://via.placeholder.com/300x400'),
+                placeholder: const AssetImage('assets/no-image.jpg'),
+                image: NetworkImage(movie.fullPosterImg),
                 width: 130,
                 height: 190,
                 fit: BoxFit.cover,
@@ -61,11 +110,14 @@ class _MoviePoster extends StatelessWidget {
           const SizedBox(
             height: 5,
           ),
-          Text(
-            'Star Wars: El retorno del Jedi',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
+          //Englobamos en un Expanded para evitar overflow de pixels
+          Expanded(
+            child: Text(
+              movie.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
           )
         ],
       ),
